@@ -89,7 +89,7 @@ func resetHandler(s *state, cmd command) error {
 	
 	cxt:= context.Background()
 	
-	err := s.db.TruncateUsers(cxt)
+	err := s.db.DeleteUsers(cxt)
 
 	if err != nil {
 		return fmt.Errorf("couldn't delete users: %w", err)
