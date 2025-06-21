@@ -1,13 +1,19 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 
 	"github.com/ankit-ahlawat-sudo/Gator/internal/config"
+	"github.com/ankit-ahlawat-sudo/Gator/internal/database"
+
+	_ "github.com/lib/pq"
 )
+
 type state struct {
 	cfg *config.Config
+	db  *database.Queries
 }
 
 func main() {
@@ -19,12 +25,23 @@ func main() {
 	programState := &state{
 		cfg: &cfg,
 	}
+	
+	dbURL := cfg.DbURL
+
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatal("DB not opening")
+	}
+
+	dbQueries := database.New(db)
+	programState.db = dbQueries
 
 	cmds := commands{
 		registeredCommands: make(map[string]func(*state, command) error),
 	}
 
 	cmds.register("login", loginHandler)
+	cmds.register("register", registerHandler)
 
 	if len(os.Args) < 2  {
 		log.Fatal("Usage: cli <command> [args...]")
