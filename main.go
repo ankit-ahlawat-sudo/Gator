@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"os"
 
 	"github.com/ankit-ahlawat-sudo/Gator/internal/config"
 	"github.com/ankit-ahlawat-sudo/Gator/internal/database"
-
+	
 	_ "github.com/lib/pq"
 )
 
@@ -45,10 +46,10 @@ func main() {
 	cmds.register("reset", resetHandler)
 	cmds.register("users", getUsersHandler)
 	cmds.register("agg", handlerAgg)
-	cmds.register("addfeed", addFeed)
+	cmds.register("addfeed", middlewareLoggedIn(addFeed))
 	cmds.register("feeds", getFeedsInfo)
-	cmds.register("follow", followFeed)
-	cmds.register("following", followingFeeds)
+	cmds.register("follow", middlewareLoggedIn(followFeed))
+	cmds.register("following", middlewareLoggedIn(followingFeeds))
 
 	if len(os.Args) < 2  {
 		log.Fatal("Usage: cli <command> [args...]")
@@ -60,5 +61,16 @@ func main() {
 	
 	if err:= cmds.run(programState, command{cmdName, cmdArgs}); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func middlewareLoggedIn(handler func(s *state, cmd command, user database.User) error) func(*state, command) error {
+	return func(s *state, cmd command) error {
+		user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+		if err != nil {
+			return err
+		}
+
+		return handler(s, cmd, user)
 	}
 }
