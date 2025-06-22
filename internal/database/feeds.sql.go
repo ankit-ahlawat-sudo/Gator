@@ -7,29 +7,84 @@ package database
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 const createFeed = `-- name: CreateFeed :one
-INSERT INTO feeds (name, url, user_id)
+INSERT INTO feeds (id, created_at, updated_at, name, url, user_id)
 VALUES (
     $1,
     $2,
-    $3
+    $3,
+    $4,
+    $5,
+    $6
 )
-RETURNING name, url, user_id
+RETURNING id, created_at, updated_at, name, url, user_id
 `
 
 type CreateFeedParams struct {
-	Name   string
-	Url    string
-	UserID uuid.UUID
+	ID        uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Name      string
+	Url       string
+	UserID    uuid.UUID
 }
 
 func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, error) {
-	row := q.db.QueryRowContext(ctx, createFeed, arg.Name, arg.Url, arg.UserID)
+	row := q.db.QueryRowContext(ctx, createFeed,
+		arg.ID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+		arg.Name,
+		arg.Url,
+		arg.UserID,
+	)
 	var i Feed
-	err := row.Scan(&i.Name, &i.Url, &i.UserID)
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Url,
+		&i.UserID,
+	)
 	return i, err
+}
+
+const getFeedsFromDb = `-- name: GetFeedsFromDb :many
+Select feeds.name AS feed_name, feeds.url, users.name AS user_name FROM feeds
+JOIN users ON feeds.user_id = users.id
+`
+
+type GetFeedsFromDbRow struct {
+	FeedName string
+	Url      string
+	UserName string
+}
+
+func (q *Queries) GetFeedsFromDb(ctx context.Context) ([]GetFeedsFromDbRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFeedsFromDb)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFeedsFromDbRow
+	for rows.Next() {
+		var i GetFeedsFromDbRow
+		if err := rows.Scan(&i.FeedName, &i.Url, &i.UserName); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
