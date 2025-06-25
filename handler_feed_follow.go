@@ -47,3 +47,21 @@ func followingFeeds(s *state, cmd command, user database.User) error {
 	
 	return nil
 }
+
+func deleteFeedFollow(s *state, cmd command, user database.User) error {
+	
+	feed, err:= s.db.GetFeedFromURL(context.Background(), cmd.Args[0])
+	if err != nil {
+		return err
+	}
+
+	err = s.db.DeleteFeedFollow(context.Background(), database.DeleteFeedFollowParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	})
+	if err != nil {
+		return err
+	}
+	
+	return nil
+}

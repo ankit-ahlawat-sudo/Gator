@@ -8,7 +8,7 @@ import (
 
 	"github.com/ankit-ahlawat-sudo/Gator/internal/config"
 	"github.com/ankit-ahlawat-sudo/Gator/internal/database"
-	
+
 	_ "github.com/lib/pq"
 )
 
@@ -50,6 +50,7 @@ func main() {
 	cmds.register("feeds", getFeedsInfo)
 	cmds.register("follow", middlewareLoggedIn(followFeed))
 	cmds.register("following", middlewareLoggedIn(followingFeeds))
+	cmds.register("unfollow", middlewareLoggedIn(deleteFeedFollow))
 
 	if len(os.Args) < 2  {
 		log.Fatal("Usage: cli <command> [args...]")
