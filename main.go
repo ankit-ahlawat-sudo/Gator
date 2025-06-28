@@ -51,6 +51,7 @@ func main() {
 	cmds.register("follow", middlewareLoggedIn(followFeed))
 	cmds.register("following", middlewareLoggedIn(followingFeeds))
 	cmds.register("unfollow", middlewareLoggedIn(deleteFeedFollow))
+	cmds.register("browse", middlewareLoggedIn(handleBrowser))
 
 	if len(os.Args) < 2  {
 		log.Fatal("Usage: cli <command> [args...]")
